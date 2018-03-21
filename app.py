@@ -23,7 +23,11 @@ app.config['EVAL_PATH'] = ' eval.lua '
 app.config['GPU_MODE'] = 'model_id1-501-1448236541.t7'
 app.config['CPU_MODE'] = 'model_id1-501-1448236541.t7_cpu.t7'
 app.config['IMG_PATH'] = 'images/'
-app.config['ALLOWED_EXTENSIONS'] = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+app.config['ALLOWED_EXTENSIONS'] = set(['png', 'jpg', 'jpeg', 'gif'])
+
+app.logger.addHandler(logging.StreamHandler(sys.stdout))
+app.logger.setLevel(logging.DEBUG)
+
 
 # For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
@@ -38,10 +42,6 @@ def index():
 # Route that will process the file upload
 @app.route('/upload', methods=['POST'])
 def upload():
-
-    app.logger.addHandler(logging.StreamHandler(sys.stdout))
-    app.logger.setLevel(logging.DEBUG)
-
     try:
         # Get the name of the uploaded files
         uploaded_files = request.files.getlist("file[]")
@@ -64,8 +64,7 @@ def upload():
         #logging.info('Uploaded image open error: %s', err)
         return render_template(
             'index.html',has_result=False
-        )
-    sys.stdout.write('-----------------------------------'+str(filenames))   
+        ) 
     process_image, times_used  = app.clf.image_caption(filenames) 
     # sys.stdout.write(str(process_image)+'*****'+'\n')
     return render_template('upload.html', return_process=process_image, times = times_used)
@@ -79,24 +78,31 @@ def uploaded_file(filename):
 
 @app.route('/classify_url', methods=['GET'])
 def classify_url():
-    imageurl = request.args.get('imageurl', '')
-    # download
-    user_Agent = 'Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
-    header = {'User-Agent':user_Agent}
-    req = urllib.request.Request(imageurl,headers=header)
-    raw_data = urllib.request.urlopen(req).read()
-    filename = os.path.join(app.config['UPLOAD_FOLDER'], 'tmp.jpg')
+    try:
+        imageurl = request.args.get('imageurl', '')
+        # download
+        user_Agent = 'Mozilla/5.0 (Windows NT 6.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+        header = {'User-Agent':user_Agent}
+        req = urllib.request.Request(imageurl,headers=header)
+        raw_data = urllib.request.urlopen(req).read()
+    except urllib.error.HTTPError as e:
+        logging.info('url image open error: %s', err)
+        return render_template(
+            'index.html',has_result=False
+        ) 
 
-    with open(filename,'wb') as f:
-        f.write(raw_data)
-    sys.stdout.write('ppppppppppppp'+str(filename))
-    f_p , f_name = os.path.split(filename)
-    process_image, times_used = app.clf.image_caption('tmp.jpg')
-    return render_template('index.html', return_process=process_image, times = times_used, has_result=True)
+    else:
+        filename = os.path.join(app.config['UPLOAD_FOLDER'], 'tmp.jpg')
+
+        with open(filename,'wb') as f:
+            f.write(raw_data)
+        f_p , f_name = os.path.split(filename)
+        process_image, times_used = app.clf.image_caption([f_name])
+        return render_template('index.html', return_process=process_image, times = times_used, has_result=True)
 
 
 class ImageCaption(object):
-    # 预先加载模型
+    # 预先加载参数
     def __init__(self, gpu_mode,model,img_path,num_images):
         logging.info('Loading net and associated files...')
         if gpu_mode:
@@ -116,9 +122,7 @@ class ImageCaption(object):
             shutil.rmtree(img_load)
             os.makedirs(img_load)
         for file_ in filenames:
-            sys.stdout.write('papapapapappapapaapapapapapap'  + '=-------------'+ str(file_) + '-----------')
             shutil.copy(os.path.join(app.config['UPLOAD_FOLDER'], file_),os.path.join(app.config['IMG_PATH'], file_))
-            sys.stdout.write('dddddddddddddddddddddddddddddddddddddd')
         starttime = time.time()
         # if app.clf.gpu_mode:
         #     os.system('th '+ app.config['EVAL_PATH'] + ' -model ' + app.clf.model  + ' -image_folder ' + app.clf.img_path + ' -num_images ' + app.clf.num_images)
@@ -128,12 +132,13 @@ class ImageCaption(object):
 
         with open(os.path.join(app.config['JSON_PATH'], 'vis.json'), 'r') as f:
             temp = json.loads(f.read())
+
         for img_msg in temp:
             img_embed = embed_image_html(os.getcwd() + '/' + app.config['UPLOAD_FOLDER'] + 'img'+ img_msg['image_id']+'.jpg')
             # process_image[img_embed] = img_msg['caption']
             process_image.append(img_embed)
             process_caption.append(img_msg['caption'])
-        
+    
         return (process_image,process_caption), '%.3f' % (endtime - starttime)
 
 def embed_image_html(fileps):
@@ -193,11 +198,6 @@ def start_from_terminal(app):
 
     init_stateModel = {'gpu_mode':FLAGS.g,'model':FLAGS.model,'img_path':FLAGS.img_path,'num_images':FLAGS.num_images}
     app.clf = ImageCaption(**init_stateModel)
-    # ImageCaption.default_args.update({'gpu_mode': opts.gpu})
-    # Initialize classifier + warm start by forward for allocation
-    # ckpt_path = os.getcwd() + '/checkpoints/model.ckpt'
-    # init_stateModel = init_model(ckpt_path)
-    # app.clf = ImagenetClassifier(**init_stateModel)
 
     if FLAGS.debug:
         app.run(debug=True, host='0.0.0.0', port=FLAGS.port)
@@ -207,8 +207,4 @@ def start_from_terminal(app):
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
-    # if not os.path.exists(UPLOAD_FOLDER):
-    #     os.makedirs(UPLOAD_FOLDER)
-    # if not os.path.exists(DETECTED_FOLDER):
-    #     os.makedirs(DETECTED_FOLDER)
     start_from_terminal(app)
