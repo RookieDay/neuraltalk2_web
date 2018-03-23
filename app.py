@@ -124,10 +124,10 @@ class ImageCaption(object):
         for file_ in filenames:
             shutil.copy(os.path.join(app.config['UPLOAD_FOLDER'], file_),os.path.join(app.config['IMG_PATH'], file_))
         starttime = time.time()
-        # if app.clf.gpu_mode:
-        #     os.system('th '+ app.config['EVAL_PATH'] + ' -model ' + app.clf.model  + ' -image_folder ' + app.clf.img_path + ' -num_images ' + app.clf.num_images)
-        # else:
-        #     os.system('th'+ app.config['EVAL_PATH'] + ' -model ' + app.clf.model + ' -image_folder ' + app.clf.img_path + ' -num_images ' + app.clf.num_images + ' -gpuid -1')
+        if app.clf.gpu_mode:
+           os.system('th '+ app.config['EVAL_PATH'] + ' -model ' + app.clf.model  + ' -image_folder ' + app.clf.img_path + ' -num_images ' + app.clf.num_images)
+        else:
+           os.system('th'+ app.config['EVAL_PATH'] + ' -model ' + app.clf.model + ' -image_folder ' + app.clf.img_path + ' -num_images ' + app.clf.num_images + ' -gpuid -1')
         endtime = time.time()
 
         with open(os.path.join(app.config['JSON_PATH'], 'vis.json'), 'r') as f:
