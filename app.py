@@ -34,7 +34,6 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
-
 @app.route('/')
 def index():
     return render_template('index.html',has_result=False)
@@ -59,7 +58,6 @@ def upload():
                 # Redirect the user to the uploaded_file route, which
                 # will basicaly show on the browser the uploaded file
         # Load an html page with a link to each uploaded file
-
     except Exception as err:
         #logging.info('Uploaded image open error: %s', err)
         return render_template(
@@ -69,12 +67,9 @@ def upload():
     # sys.stdout.write(str(process_image)+'*****'+'\n')
     return render_template('upload.html', return_process=process_image, times = times_used)
 
-
 @app.route('/vis/imgs/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
-
+    return send_from_directory(app.config['UPLOAD_FOLDER'],filename)
 
 @app.route('/classify_url', methods=['GET'])
 def classify_url():
@@ -114,7 +109,6 @@ class ImageCaption(object):
         self.img_path = img_path
         self.num_images = num_images
 
-
     def image_caption(self,filenames):
         process_image = []
         process_caption = []
@@ -147,14 +141,12 @@ def embed_image_html(fileps):
         encoded_string = base64.b64encode(image_file.read())
     return 'data:image/jpg;base64,' + str(encoded_string)[2:-1]
 
-
 def start_tornado(app, port=5000):
     http_server = tornado.httpserver.HTTPServer(
         tornado.wsgi.WSGIContainer(app))
     http_server.listen(port)
     print("Tornado server starting on port {}".format(port))
     tornado.ioloop.IOLoop.instance().start()
-
 
 def start_from_terminal(app):
     """
@@ -203,7 +195,6 @@ def start_from_terminal(app):
         app.run(debug=True, host='0.0.0.0', port=FLAGS.port)
     else:
         start_tornado(app, FLAGS.port)
-
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
