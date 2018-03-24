@@ -36,13 +36,14 @@ from scipy.misc import imread, imresize
 def prepro_captions(imgs):
   
   # preprocess all the captions
-  print 'example processed tokens:'
+  print ('example processed tokens:')
   for i,img in enumerate(imgs):
     img['processed_tokens'] = []
     for j,s in enumerate(img['captions']):
-      txt = str(s).lower().translate(None, string.punctuation).strip().split()
+      # print(img['captions'])
+      txt = str(s).lower().translate(string.punctuation).strip().split()
       img['processed_tokens'].append(txt)
-      if i < 10 and j == 0: print txt
+      if i < 10 and j == 0: print (txt)
 
 def build_vocab(imgs, params):
   count_thr = params['word_count_threshold']
@@ -53,19 +54,19 @@ def build_vocab(imgs, params):
     for txt in img['processed_tokens']:
       for w in txt:
         counts[w] = counts.get(w, 0) + 1
-  cw = sorted([(count,w) for w,count in counts.iteritems()], reverse=True)
-  print 'top words and their counts:'
-  print '\n'.join(map(str,cw[:20]))
+  cw = sorted([(count,w) for w,count in counts.items()], reverse=True)
+  print ('top words and their counts:')
+  print ('\n'.join(map(str,cw[:20])))
 
   # print some stats
-  total_words = sum(counts.itervalues())
-  print 'total words:', total_words
-  bad_words = [w for w,n in counts.iteritems() if n <= count_thr]
-  vocab = [w for w,n in counts.iteritems() if n > count_thr]
+  total_words = sum(counts.values())
+  print ('total words:', total_words)
+  bad_words = [w for w,n in counts.items() if n <= count_thr]
+  vocab = [w for w,n in counts.items() if n > count_thr]
   bad_count = sum(counts[w] for w in bad_words)
-  print 'number of bad words: %d/%d = %.2f%%' % (len(bad_words), len(counts), len(bad_words)*100.0/len(counts))
-  print 'number of words in vocab would be %d' % (len(vocab), )
-  print 'number of UNKs: %d/%d = %.2f%%' % (bad_count, total_words, bad_count*100.0/total_words)
+  print ('number of bad words: %d/%d = %.2f%%' % (len(bad_words), len(counts), len(bad_words)*100.0/len(counts)))
+  print ('number of words in vocab would be %d' % (len(vocab), ))
+  print ('number of UNKs: %d/%d = %.2f%%' % (bad_count, total_words, bad_count*100.0/total_words))
 
   # lets look at the distribution of lengths as well
   sent_lengths = {}
@@ -74,16 +75,16 @@ def build_vocab(imgs, params):
       nw = len(txt)
       sent_lengths[nw] = sent_lengths.get(nw, 0) + 1
   max_len = max(sent_lengths.keys())
-  print 'max length sentence in raw data: ', max_len
-  print 'sentence length distribution (count, number of words):'
+  print ('max length sentence in raw data: ', max_len)
+  print ('sentence length distribution (count, number of words):')
   sum_len = sum(sent_lengths.values())
-  for i in xrange(max_len+1):
-    print '%2d: %10d   %f%%' % (i, sent_lengths.get(i,0), sent_lengths.get(i,0)*100.0/sum_len)
+  for i in range(max_len+1):
+    print ('%2d: %10d   %f%%' % (i, sent_lengths.get(i,0), sent_lengths.get(i,0)*100.0/sum_len))
 
   # lets now produce the final annotations
   if bad_count > 0:
     # additional special UNK token we will use below to map infrequent words to
-    print 'inserting the special UNK token'
+    print ('inserting the special UNK token')
     vocab.append('UNK')
   
   for img in imgs:
@@ -106,7 +107,7 @@ def assign_splits(imgs, params):
       else: 
         img['split'] = 'train'
 
-  print 'assigned %d to val, %d to test.' % (num_val, num_test)
+  print ('assigned %d to val, %d to test.' % (num_val, num_test))
 
 def encode_captions(imgs, params, wtoi):
   """ 
@@ -149,7 +150,7 @@ def encode_captions(imgs, params, wtoi):
   assert L.shape[0] == M, 'lengths don\'t match? that\'s weird'
   assert np.all(label_length > 0), 'error: some caption had no words?'
 
-  print 'encoded captions to array of size ', `L.shape`
+  print ('encoded captions to array of size ', L.shape)
   return L, label_start_ix, label_end_ix, label_length
 
 def main(params):
@@ -186,7 +187,7 @@ def main(params):
     try:
         Ir = imresize(I, (256,256))
     except:
-        print 'failed resizing image %s - see http://git.io/vBIE0' % (img['file_path'],)
+        print ('failed resizing image %s - see http://git.io/vBIE0' % (img['file_path'],))
         raise
     # handle grayscale input images
     if len(Ir.shape) == 2:
@@ -197,9 +198,9 @@ def main(params):
     # write to h5
     dset[i] = Ir
     if i % 1000 == 0:
-      print 'processing %d/%d (%.2f%% done)' % (i, N, i*100.0/N)
+      print ('processing %d/%d (%.2f%% done)' % (i, N, i*100.0/N))
   f.close()
-  print 'wrote ', params['output_h5']
+  print ('wrote ', params['output_h5'])
 
   # create output json file
   out = {}
@@ -215,7 +216,7 @@ def main(params):
     out['images'].append(jimg)
   
   json.dump(out, open(params['output_json'], 'w'))
-  print 'wrote ', params['output_json']
+  print ('wrote ', params['output_json'])
 
 if __name__ == "__main__":
 
@@ -235,6 +236,6 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
   params = vars(args) # convert to ordinary dict
-  print 'parsed input parameters:'
-  print json.dumps(params, indent = 2)
+  print ('parsed input parameters:')
+  print (json.dumps(params, indent = 2))
   main(params)
