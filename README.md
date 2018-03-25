@@ -22,6 +22,7 @@ ubuntu16 + python3 + lua + torch + flask
 
 ![初始页面](https://github.com/RookieDay/neuraltalk2_web/blob/master/01.png)
 
+![动态展示](https://github.com/RookieDay/neuraltalk2_web/blob/master/02.gif)
 
 ## 开发计划
 
