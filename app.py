@@ -85,7 +85,6 @@ def classify_url():
         return render_template(
             'index.html',has_result=False
         ) 
-
     else:
         filename = os.path.join(app.config['UPLOAD_FOLDER'], 'tmp.jpg')
 
@@ -94,7 +93,6 @@ def classify_url():
         f_p , f_name = os.path.split(filename)
         process_image, times_used = app.clf.image_caption([f_name])
         return render_template('index.html', return_process=process_image, times = times_used, has_result=True)
-
 
 class ImageCaption(object):
     # 预先加载参数
